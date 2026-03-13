@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✨ aura memory · image match ✨</title>
+  <!-- Font Awesome 6 (free) for crisp icons as "images" -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Google Font for stylish typography -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #0b0f1c 0%, #1a1f35 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .game-container {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 3rem;
+      padding: 2rem 2rem 2.5rem;
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.08);
+      width: min(700px, 100%);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+      color: #eef5ff;
+    }
+
+    .title h1 {
+      font-weight: 500;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      background: linear-gradient(130deg, #c0e0ff, #b3a0ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 15px rgba(172, 140, 255, 0.5);
+    }
+
+    .title p {
+      font-size: 0.9rem;
+      opacity: 0.7;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .stats {
+      display: flex;
+      gap: 1.8rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.8rem 1.5rem;
+      border-radius: 60px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(4px);
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stat-item i {
+      font-size: 1.2rem;
+      color: #9bb6ff;
+    }
+
+    .stat-item span {
+      font-weight: 500;
+      font-size: 1.3rem;
+      min-width: 2rem;
+      text-align: center;
+      color: #ffffff;
+      text-shadow: 0 0 10px #6d8cff;
+    }
+
+    .new-game-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1.5px solid rgba(255, 215, 245, 0.4);
+      color: #f0dbff;
+      padding: 0.8rem 2rem;
+      border-radius: 40px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      letter-spacing: 0.5px;
+    }
+
+    .new-game-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: #ffb9ff;
+      color: white;
+      box-shadow: 0 0 18px #b2a1ff;
+      transform: scale(1.02);
+    }
+
+    /* game grid */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin: 2.5rem 0 2rem;
+      justify-items: center;
+    }
+
+    /* card flip container */
+    .card {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      cursor: pointer;
+      perspective: 1500px;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+      transform-style: preserve-3d;
+      border-radius: 20px;
+      box-shadow: 0 15px 25px -8px rgba(0, 0, 0, 0.6);
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    /* front face (icon) */
+    .card-front {
+      background: linear-gradient(145deg, #232842, #13182e);
+      border: 2px solid rgba(255, 190, 240, 0.2);
+      transform: rotateY(180deg);
+    }
+
+    .card-front i {
+      font-size: 3.2rem;
+      background: linear-gradient(130deg, #ffd6b0, #c1a2ff, #a2d0ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 12px #b49eff);
+      transition: 0.2s;
+    }
+
+    /* back face (stylish pattern) */
+    .card-back {
+      background: radial-gradient(circle at 30% 30%, #2f376b, #151b34);
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 8px, transparent 8px, transparent 16px);
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
+    }
+
+    .card-back::after {
+      content: "?";
+      font-size: 3rem;
+      font-weight: 300;
+      color: rgba(210, 190, 255, 0.35);
+      text-shadow: 0 0 20px #ab8eff;
+      letter-spacing: 4px;
+    }
+
+    /* matched cards – subtle glow & disable */
+    .card.matched .card-front {
+      border-color: #9effb4;
+      box-shadow: 0 0 30px #78e08f, inset 0 0 20px #69e07f50;
+      background: linear-gradient(145deg, #1e2a3a, #14232e);
+    }
+
+    .card.matched {
+      cursor: default;
+      filter: brightness(1.05);
+    }
+
+    .card.matched .card-front i {
+      filter: drop-shadow(0 0 18px #fff3b0);
+    }
+
+    /* disable clicks while waiting / matched */
+    .card.flipped, .card.matched {
+      pointer-events: none;   /* flipped cards can't be re-clicked, matched can't */
+    }
+
+    /* but the board lock is handled via js, pointer-events for matched only */
+    .card:not(.flipped):not(.matched) {
+      pointer-events: auto;
+    }
+
+    /* win message */
+    .win-message {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 1.8rem;
+      font-weight: 500;
+      letter-spacing: 1px;
+      background: linear-gradient(130deg, #d6e5ff, #f2c2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: 0.3s;
+      min-height: 3rem;
+    }
+
+    .win-message.show {
+      opacity: 1;
+      transform: scale(1);
+      text-shadow: 0 0 40px #cd9eff;
+    }
+
+    /* footer small */
+    .footer {
+      text-align: center;
+      color: #6679a8;
+      font-size: 0.8rem;
+    }
+
+    /* responsiveness */
+    @media (max-width: 480px) {
+      .game-container { padding: 1.5rem; }
+      .board { gap: 0.7rem; }
+      .stats { gap: 1rem; padding: 0.5rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <div class="header">
+    <div class="title">
+      <h1>MEMORY · IMAGE</h1>
+      <p><i class="fa-regular fa-star" style="color: #b7a2ff;"></i> match the icons</p>
+    </div>
+    <div class="stats">
+      <div class="stat-item"><i class="fa-regular fa-clock"></i><span id="move-counter">0</span></div>
+      <div class="stat-item"><i class="fa-regular fa-heart"></i><span id="pair-counter">0/8</span></div>
+    </div>
+    <button class="new-game-btn" id="reset-game"><i class="fa-regular fa-pen-to-square"></i> new shuffle</button>
+  </div>
+
+  <!-- memory grid -->
+  <div class="board" id="game-board"></div>
+
+  <!-- win celebration -->
+  <div class="win-message" id="win-message">✨ all pairs found! ✨</div>
+
+  <div class="footer">flip · focus · find</div>
+</div>
+
+<script>
+  (function() {
+    // ----- stylish icon set (images as font icons) -----
+    const ICON_SET = [
+      "fa-solid fa-crown",        // 0
+      "fa-solid fa-star",         // 1
+      "fa-solid fa-heart",        // 2
+      "fa-solid fa-bolt",         // 3
+      "fa-solid fa-fan",          // 4
+      "fa-solid fa-feather",      // 5
+      "fa-solid fa-gem",          // 6
+      "fa-solid fa-wand-magic"    // 7
+    ];
+
+    const TOTAL_PAIRS = ICON_SET.length;           // 8 pairs = 16 cards
+    let cards = [];                // current shuffled icon classes (length 16)
+    let flippedCards = [];         // indices currently flipped (max 2)
+    let lockBoard = false;         // wait after two flips
+    let moves = 0;
+    let matchedCount = 0;          // number of matched pairs
+    let boardElement = document.getElementById('game-board');
+    let moveSpan = document.getElementById('move-counter');
+    let pairSpan = document.getElementById('pair-counter');
+    let winDiv = document.getElementById('win-message');
+
+    // helper: shuffle array (Fisher-Yates)
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // generate fresh shuffled card deck (array of icon classes)
+    function createShuffledCards() {
+      // duplicate icons for pairs
+      let deck = [];
+      ICON_SET.forEach(icon => {
+        deck.push(icon, icon);   // two copies
+      });
+      return shuffleArray(deck);
+    }
+
+    // update UI counters
+    function updateStats() {
+      moveSpan.textContent = moves;
+      pairSpan.textContent = `${matchedCount}/${TOTAL_PAIRS}`;
+    }
+
+    // check if game is won
+    function checkWin() {
+      if (matchedCount === TOTAL_PAIRS) {
+        winDiv.classList.add('show');
+        // optional: slight confetti effect via class – but keep elegant
+      } else {
+        winDiv.classList.remove('show');
+      }
+    }
+
+    // reset board state (new game)
+    function resetGame() {
+      // reset all tracking vars
+      cards = createShuffledCards();
+      flippedCards = [];
+      lockBoard = false;
+      moves = 0;
+      matchedCount = 0;
+      winDiv.classList.remove('show');
+
+      // re-render board
+      renderBoard();
+
+      // update counters
+      updateStats();
+    }
+
+    // render card elements based on `cards` array
+    function renderBoard() {
+      let html = '';
+      for (let i = 0; i < cards.length; i++) {
+        const iconClass = cards[i];
+        html += `
+          <div class="card" data-index="${i}" data-icon="${iconClass}">
+            <div class="card-inner">
+              <div class="card-front"><i class="${iconClass}"></i></div>
+              <div class="card-back"></div>
+            </div>
+          </div>
+        `;
+      }
+      boardElement.innerHTML = html;
+    }
+
+    // handle card click
+    function onCardClick(e) {
+      // find the card container (could be click on icon or inner div)
+      const cardElement = e.target.closest('.card');
+      if (!cardElement) return;
+
+      // important checks: board locked, or card flipped/matched, or no data-index
+      if (lockBoard) return;
+
+      const index = parseInt(cardElement.dataset.index, 10);
+      // already flipped or matched? (class check)
+      if (cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) {
+        return;
+      }
+
+      // also prevent if same card is clicked twice (should be covered by flipped class, but just in case)
+      if (flippedCards.includes(index)) return;
+
+      // now we can flip this card
+      cardElement.classList.add('flipped');
+      flippedCards.push(index);
+
+      // if we have two flipped cards, lock and evaluate
+      if (flippedCards.length === 2) {
+        lockBoard = true;
+        moves += 1;
+        updateStats();
+
+        const idx1 = flippedCards[0];
+        const idx2 = flippedCards[1];
+        const card1 = document.querySelector(`.card[data-index="${idx1}"]`);
+        const card2 = document.querySelector(`.card[data-index="${idx2}"]`);
+        const icon1 = cards[idx1];
+        const icon2 = cards[idx2];
+
+        // check match
+        if (icon1 === icon2) {
+          // matched! keep flipped and set matched class
+          card1.classList.add('matched');
+          card2.classList.add('matched');
+          matchedCount += 1;
+          pairSpan.textContent = `${matchedCount}/${TOTAL_PAIRS}`;
+
+          // clear flippedCards array
+          flippedCards = [];
+
+          // unlock board
+          lockBoard = false;
+
+          // check win
+          checkWin();
+        } else {
+          // not matched: schedule to flip back after 700ms
+          setTimeout(() => {
+            // cards might have changed if reset pressed during timeout, so verify they still exist and are flipped
+            const card1Now = document.querySelector(`.card[data-index="${idx1}"]`);
+            const card2Now = document.querySelector(`.card[data-index="${idx2}"]`);
+            // only remove flipped if they are not matched (safety)
+            if (card1Now && !card1Now.classList.contains('matched')) {
+              card1Now.classList.remove('flipped');
+            }
+            if (card2Now && !card2Now.classList.contains('matched')) {
+              card2Now.classList.remove('flipped');
+            }
+            // clear flipped array and unlock
+            flippedCards = [];
+            lockBoard = false;
+          }, 700);
+        }
+      }
+    }
+
+    // Event delegation for clicks on board
+    boardElement.addEventListener('click', onCardClick);
+
+    // reset button
+    document.getElementById('reset-game').addEventListener('click', () => {
+      resetGame();
+    });
+
+    // initial render
+    cards = createShuffledCards();
+    renderBoard();
+    updateStats();
+
+    // bonus: prevent flips while resetting via double-click etc (lockBoard handles)
+    // also ensure that if a reset happens mid-timeout, state stays consistent.
+    // we override any pending timeout by resetting the whole board – no need to cancel explicitly,
+    // because we re-render, old elements gone.
+    // but we must also reset lockBoard and flippedCards in resetGame. (done)
+
+    // small improvement: if reset during setTimeout, the old setTimeout will still run but
+    // selectors will not find old indices (or find newly generated cards with same index? could be dangerous)
+    // to avoid that, we can store timeout and clear, but simpler: we disable reset during lock? no, reset should always work.
+    // we can store timeout id and clear if needed.
+    let pendingTimeout = null;
+    // modify the not-match path to use a managed timeout
+    // override the setTimeout part with a managed version
+    const originalAddListener = boardElement.addEventListener; // not needed, we'll override the click handler logic
+
+    // let's restructure: we will replace the click handler with a version that uses a global timeout
+    // but easier: just rewire inside click. I'll keep the code but store timeout and clear on reset.
+    // to keep it clean, I'll add a small refactor:
+
+    let flipBackTimeout = null;
+
+    function clearFlipTimeout() {
+      if (flipBackTimeout) {
+        clearTimeout(flipBackTimeout);
+        flipBackTimeout = null;
+      }
+    }
+
+    // modify resetGame to clear timeout
+    const originalReset = resetGame;
+    resetGame = function() {
+      clearFlipTimeout();
+      // also reset flipped cards array and lock
+      flippedCards = [];
+      lockBoard = false;
+      originalReset();
+    };
+    // override
+    window.resetGame = resetGame;
+
+    // also patch the click handling for non-match
+    boardElement.removeEventListener('click', onCardClick);
+    // redefine onCardClick with managed timeout
+    const newOnCardClick = function(e) {
+      const cardElement = e.target.closest('.card');
+      if (!cardElement) return;
+      if (lockBoard) return;
+
+      const index = parseInt(cardElement.dataset.index, 10);
+      if (cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) return;
+      if (flippedCards.includes(index)) return;
+
+      cardElement.classList.add('flipped');
+      flippedCards.push(index);
+
+      if (flippedCards.length === 2) {
+        lockBoard = true;
+        moves += 1;
+        updateStats();
+
+        const idx1 = flippedCards[0];
+        const idx2 = flippedCards[1];
+        const card1 = document.querySelector(`.card[data-index="${idx1}"]`);
+        const card2 = document.querySelector(`.card[data-index="${idx2}"]`);
+        const icon1 = cards[idx1];
+        const icon2 = cards[idx2];
+
+        if (icon1 === icon2) {
+          // matched
+          card1.classList.add('matched');
+          card2.classList.add('matched');
+          matchedCount += 1;
+          pairSpan.textContent = `${matchedCount}/${TOTAL_PAIRS}`;
+          flippedCards = [];
+          lockBoard = false;
+          checkWin();
+        } else {
+          // not matched: set timeout
+          clearFlipTimeout(); // clear any previous (shouldn't exist)
+          flipBackTimeout = setTimeout(() => {
+            const card1Now = document.querySelector(`.card[data-index="${idx1}"]`);
+            const card2Now = document.querySelector(`.card[data-index="${idx2}"]`);
+            if (card1Now && !card1Now.classList.contains('matched')) {
+              card1Now.classList.remove('flipped');
+            }
+            if (card2Now && !card2Now.classList.contains('matched')) {
+              card2Now.classList.remove('flipped');
+            }
+            flippedCards = [];
+            lockBoard = false;
+            flipBackTimeout = null;
+          }, 700);
+        }
+      }
+    };
+
+    boardElement.addEventListener('click', newOnCardClick);
+
+    // attach the new reset function to button
+    document.getElementById('reset-game').addEventListener('click', () => {
+      resetGame();
+    });
+
+    // re-assign resetGame properly
+    resetGame = function() {
+      clearFlipTimeout();
+      cards = createShuffledCards();
+      flippedCards = [];
+      lockBoard = false;
+      moves = 0;
+      matchedCount = 0;
+      winDiv.classList.remove('show');
+      renderBoard();
+      updateStats();
+    };
+
+    // final call to set initial game
+    resetGame();
+  })();
+</script>
+</body>
+</html>
